@@ -13,12 +13,25 @@ else
   fi
 fi
 
-[[ -f /etc/sysconfig/displaymanager ]] &&
-  sed -i "s|DISPLAYMANAGER_AUTOLOGIN=.*|DISPLAYMANAGER_AUTOLOGIN=\"${USERNAME}\"|g" /etc/sysconfig/displaymanager
+DMCONF="/etc/sysconfig/displaymanager"
+
+if [[ -f "$DMCONF" ]]; then
+  if grep -q '^DISPLAYMANAGER_AUTOLOGIN=' "$DMCONF"; then
+    sed -i "s|^DISPLAYMANAGER_AUTOLOGIN=.*|DISPLAYMANAGER_AUTOLOGIN=\"${USERNAME}\"|g" "$DMCONF"
+  else
+    printf '\nDISPLAYMANAGER_AUTOLOGIN="%s"\n' "$USERNAME" >> "$DMCONF"
+  fi
+else
+  printf 'DISPLAYMANAGER_AUTOLOGIN="%s"\n' "$USERNAME" > "$DMCONF"
+fi
 
 ASF="/var/lib/AccountsService/users/${USERNAME}"
 if [[ -f "$ASF" ]]; then
-  sed -i "s|^Session=.*|Session=default|g" "$ASF"
+  if grep -q '^Session=' "$ASF"; then
+    sed -i "s|^Session=.*|Session=default|g" "$ASF"
+  else
+    printf '\nSession=default\n' >> "$ASF"
+  fi
 else
   mkdir -p "$(dirname "$ASF")"
   printf "[User]\nSession=default\n" > "$ASF"
