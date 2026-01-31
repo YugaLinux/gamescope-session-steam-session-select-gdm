@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 if [[ -e /home/tik/.config/autostart/org.opensuse.tik.desktop ]]; then
   USERNAME="tik"
