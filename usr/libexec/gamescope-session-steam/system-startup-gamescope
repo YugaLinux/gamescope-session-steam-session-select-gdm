@@ -1,23 +1,27 @@
 #!/bin/bash
 
-if [ -e "/home/tik/.config/autostart/org.opensuse.tik.desktop" ]; then
-  # We are in the installer
-  exit 0
-fi
-
-if [[ -f /etc/sysconfig/displaymanager ]]; then
-  sed -i "s|DISPLAYMANAGER_AUTOLOGIN=.*|DISPLAYMANAGER_AUTOLOGIN=\"deck\"|g" /etc/sysconfig/displaymanager
-fi
-
-# set to default session
-if [[ -f /var/lib/AccountsService/users/deck ]]; then
-  sed -i "s|Session=.*|Session=default|g" /var/lib/AccountsService/users/deck
+if [[ -e /home/tik/.config/autostart/org.opensuse.tik.desktop ]]; then
+  USERNAME="tik"
+  SESSION_DESKTOP="/usr/share/wayland-sessions/gnome-wayland.desktop"
 else
-  echo "[User]" > /var/lib/AccountsService/users/deck
-  echo "Session=default" >> /var/lib/AccountsService/users/deck
+  USERNAME="$(getent passwd 1000 | cut -d: -f1)"
+  if [[ -n "$USERNAME" ]]; then
+    SESSION_DESKTOP="/usr/share/wayland-sessions/gamescope-session-steam.desktop"
+  else
+    USERNAME="root"
+    SESSION_DESKTOP="/usr/share/wayland-sessions/gnome-wayland.desktop"
+  fi
 fi
 
-# Set default session
-if [[ -f /usr/share/wayland-sessions/gamescope-session-steam.desktop ]]; then
-  ln -sf /usr/share/wayland-sessions/gamescope-session-steam.desktop /etc/alternatives/default-waylandsession.desktop
+[[ -f /etc/sysconfig/displaymanager ]] &&
+  sed -i "s|DISPLAYMANAGER_AUTOLOGIN=.*|DISPLAYMANAGER_AUTOLOGIN=\"${USERNAME}\"|g" /etc/sysconfig/displaymanager
+
+ASF="/var/lib/AccountsService/users/${USERNAME}"
+if [[ -f "$ASF" ]]; then
+  sed -i "s|^Session=.*|Session=default|g" "$ASF"
+else
+  mkdir -p "$(dirname "$ASF")"
+  printf "[User]\nSession=default\n" > "$ASF"
 fi
+
+[[ -f "$SESSION_DESKTOP" ]] && ln -sf "$SESSION_DESKTOP" /etc/alternatives/default-waylandsession.desktop
