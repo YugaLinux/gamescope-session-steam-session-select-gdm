@@ -1,16 +1,20 @@
 #!/usr/bin/bash
 
-if [[ -e /home/tik/.config/autostart/org.opensuse.tik.desktop ]]; then
-  USERNAME="tik"
-  SESSION_DESKTOP="/usr/share/wayland-sessions/gnome-wayland.desktop"
-else
-  USERNAME="$(getent passwd 1000 | cut -d: -f1)"
-  if [[ -n "$USERNAME" ]]; then
-    SESSION_DESKTOP="/usr/share/wayland-sessions/gamescope-session-steam.desktop"
-  else
-    USERNAME="root"
-    SESSION_DESKTOP="/usr/share/wayland-sessions/gnome-wayland.desktop"
-  fi
+SYSCONF="/etc/gamescope-session-steam/system.conf"
+
+DEFAULT_USER=""
+DEFAULT_SESSION=""
+
+if [[ -f "$SYSCONF" ]]; then
+  . "$SYSCONF"
+fi
+
+USERNAME="${DEFAULT_USER:-}"
+SESSION_NAME="${DEFAULT_SESSION:-}"
+
+SESSION_DESKTOP=""
+if [[ -n "$SESSION_NAME" ]]; then
+  SESSION_DESKTOP="/usr/share/wayland-sessions/${SESSION_NAME}.desktop"
 fi
 
 DMCONF="/etc/sysconfig/displaymanager"
@@ -25,16 +29,20 @@ else
   printf 'DISPLAYMANAGER_AUTOLOGIN="%s"\n' "$USERNAME" > "$DMCONF"
 fi
 
-ASF="/var/lib/AccountsService/users/${USERNAME}"
-if [[ -f "$ASF" ]]; then
-  if grep -q '^Session=' "$ASF"; then
-    sed -i "s|^Session=.*|Session=default|g" "$ASF"
+if [[ -n "$USERNAME" ]]; then
+  ASF="/var/lib/AccountsService/users/${USERNAME}"
+  if [[ -f "$ASF" ]]; then
+    if grep -q '^Session=' "$ASF"; then
+      sed -i "s|^Session=.*|Session=default|g" "$ASF"
+    else
+      printf '\nSession=default\n' >> "$ASF"
+    fi
   else
-    printf '\nSession=default\n' >> "$ASF"
+    mkdir -p "$(dirname "$ASF")"
+    printf "[User]\nSession=default\n" > "$ASF"
   fi
-else
-  mkdir -p "$(dirname "$ASF")"
-  printf "[User]\nSession=default\n" > "$ASF"
 fi
 
-[[ -f "$SESSION_DESKTOP" ]] && ln -sf "$SESSION_DESKTOP" /etc/alternatives/default-waylandsession.desktop
+if [[ -n "$SESSION_DESKTOP" && -f "$SESSION_DESKTOP" ]]; then
+  ln -sf "$SESSION_DESKTOP" /etc/alternatives/default-waylandsession.desktop
+fi
