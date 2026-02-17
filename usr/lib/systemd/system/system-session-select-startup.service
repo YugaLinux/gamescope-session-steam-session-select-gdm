@@ -1,11 +1,11 @@
 [Unit]
-Description=Set autologin-session to gamescope-session-steam
+Description=Autologin to a predefined session
 After=local-fs.target
 Before=gdm.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/libexec/gamescope-session-steam/system-startup-gamescope
+ExecStart=/usr/libexec/gamescope-session-steam/system-session-select-startup
 
 [Install]
 RequiredBy=graphical.target
