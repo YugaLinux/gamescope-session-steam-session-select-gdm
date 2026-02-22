@@ -7,11 +7,16 @@ ensure_dir() { mkdir -p "$1"; }
 
 # sentinel
 SENTINEL_FILE="steamos-session-select"
+SYSCONF="/etc/gamescope-session-steam/system.conf"
 
 session="${1:-gamescope}"
 
 # user used for autologin
 TARGET_USER="${3:-${USER:-}}"
+
+if [[ -f "$SYSCONF" ]]; then
+  . "$SYSCONF"
+fi
 
 if [[ "${2:-}" != "--root" ]]; then
   [[ $EUID -eq 0 ]] && die "Run this script as your user, not root."
@@ -50,7 +55,7 @@ case "$session" in
     session_launcher="gamescope-session-steam"
     ;;
   desktop|plasma|plasma-wayland-persistent|plasma-x11-persistent)
-    session_launcher="gnome-wayland"
+    session_launcher="${DESKTOP_SESSION:-gnome-wayland}"
     ;;
   *)
     die "Unrecognised session '$session'"
